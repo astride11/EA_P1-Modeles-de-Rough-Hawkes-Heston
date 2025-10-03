@@ -39,7 +39,7 @@ Option::Option(int phi_, double S0_, double K_, double T_, double t0_,
     /*
     Nous initialisons les attributs avec les valeurs passees en parametres.
     */
-    : phi(phi_), S0(S0_), K(K_), T(T_), t0(t0_), r(r_), q(q_), market_price(market_price_), vega(vega_) {}
+    : phi(phi_), t0(t0_), T(T_), S0(S0_), K(K_), r(r_), q(q_), market_price(market_price_), vega(vega_) {}
 
 Option::~Option() {
     // Destructeur
