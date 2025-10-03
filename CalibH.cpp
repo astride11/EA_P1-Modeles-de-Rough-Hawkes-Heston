@@ -239,7 +239,7 @@ std::array<double,5> HestonCalibrator::nelder_mead(const std::array<double,5>& x
 std::pair<HestonParams,double> HestonCalibrator::calibrate(){
     // heuristiques d’initialisation
     // v0 : var ATM courte; theta : var LT ~ moyenne; rho négatif; sigma 0.5; kappa 2.0
-    double v0   = 0.04, theta=0.04, rho=-0.5, sigma=0.5, kappa=2.0;
+    double v0   = 0.04, theta=0.04, rho=-0.7, sigma=0.5, kappa=2.0;
     if (!market_.empty()){
         // si tu as une maturité mini proche ATM, on peut raffiner ici
     }
