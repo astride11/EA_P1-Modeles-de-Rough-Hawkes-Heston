@@ -15,6 +15,7 @@
     */
 
 
+
 // ===== Constructeur par défaut =====
 Option::Option() 
 
@@ -22,7 +23,7 @@ Option::Option()
     Nous initialisons les attributs avec des valeurs par defaut.
     Par defaut ce constructeur cree un Call avec les parametres suivants :
     t0 = 0.0
-    T = 1.0 
+    T = 1.0  \\ maturité
     S0 = 100.0              
     K = 100.0
     r = 0.05 (5%)
@@ -31,7 +32,6 @@ Option::Option()
     vega = 0.0
     */
     : phi(1), t0(0.0), T(1.0), S0(100.0), K(100.0), r(0.05), q(0.0), market_price(0.0), vega(0.0) {}
-
 
 // ===== Constructeur paramétré =====
 Option::Option(int phi_, double S0_, double K_, double T_, double t0_,
