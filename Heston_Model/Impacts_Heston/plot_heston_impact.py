@@ -1,13 +1,15 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+
 
 plt.style.use('seaborn-v0_8')
 fig, axes = plt.subplots(2, 3, figsize=(15, 10))
 fig.suptitle('Impact des Paramètres Heston sur le Smile de Volatilité', fontsize=16)
 
 # Chemin vers le dossier contenant les CSV
-data_dir = "Impacts_Heston"
+data_dir = "Heston_Model/Impacts_Heston"
 
 # Lecture des données avec le bon chemin
 kappa_df = pd.read_csv(f'{data_dir}/kappa_impact.csv')
@@ -65,5 +67,6 @@ axes[1,1].legend()
 axes[1,1].grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.savefig('heston_parameters_impact.png', dpi=300, bbox_inches='tight')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+plt.savefig(os.path.join(script_dir, 'heston_parameters_impact.png'), dpi=300, bbox_inches='tight')
 plt.show()
