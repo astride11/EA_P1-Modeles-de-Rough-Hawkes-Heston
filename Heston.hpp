@@ -4,40 +4,28 @@
 #include "Option.hpp"
 #include <complex>
 
-using cdouble = std::complex<double>;
 class Heston : public Option {
 private:
-    double kappa;   // Vitesse de réversion
-    double theta;   // Variance à long terme
-    double sigma;   // Volatilité de la variance
-    double rho;     // Corrélation entre les deux processus de Wiener
-    double v0;      // Variance initiale       
+    double kappa;  // taux de retour à la moyenne
+    double theta;  // variance à long terme
+    double sigma;  // volatilité de la volatilité
+    double rho;    // corrélation entre le spot et la variance
+    double v0;     // variance initiale
+
+    // Fonction caractéristique de Heston
+    std::complex<double> characteristic_function(std::complex<double> u) const;
 
 public:
-    // constructeur par défaut
-    Heston();  
-
-    // constructeur paramétré
-    Heston(int phi_, double S0_, double K_, double T_, double t0_,
-           double r_, double d_, double market_price_,
-           double kappa_, double theta_, double sigma_, double rho_, double v0_,
-           double vega_ = 0.0); 
-
-    virtual ~Heston();
+    Heston(int phi_, double t0_, double T_, double S0_, double K_, 
+           double r_, double q_, double market_price_, double vega_,
+           double kappa_, double theta_, double sigma_, double rho_, double v0_);
     
-    virtual double prix() const override; // implémentation de la fonction pure virtuelle
-
-    double prix_call() const; // fonction pour calculer le prix du call européen selon le modèle de Heston
-
-    double heston_probability(int j, double tau) const; // fonction pour calculer la probabilité P_j selon le modèle de Heston
+    double prix() const override;
     
-    cdouble heston_characteristic(double phi, int j, double tau) const;
-    // accesseurs
-    double getKappa() const;
-    double getTheta() const;
-    double getSigma() const;
-    double getRho() const;
-    double getV0() const;
+    // Implémentation de la fonction caractéristique
+    std::complex<double> cf_logST(std::complex<double> u) const override {
+        return characteristic_function(u);
+    }
 };
 
-#endif // HESTON_HPP
+#endif
