@@ -134,9 +134,9 @@ def implied_vol_call(kappa, theta, sigma, rho, V0):
 
 # smile pour le marché et heston (calibré et non calibré)
 plt.figure(figsize=(12, 8))
-plt.plot(calls['strike'], calls['impliedVolatility'], label='Market Implied Volatility')
-plt.plot(calls['strike'], implied_vol_call( kappa, theta, sigma, rho, V0), label='Heston Implied Volatility (not calibrated)')
-plt.plot(calls['strike'], implied_vol_call( *res.x), label='Heston Implied Volatility (calibrated)')
+plt.plot(calls['strike'], calls['impliedVolatility'],'o', label='Market Implied Volatility')
+plt.plot(calls['strike'], implied_vol_call( kappa, theta, sigma, rho, V0), 'x', label='Heston Implied Volatility (not calibrated)')
+plt.plot(calls['strike'], implied_vol_call( *res.x), '-', label='Heston Implied Volatility (calibrated)')
 plt.legend()
 plt.xlabel("Strike")
 plt.ylabel("Implied Volatility")

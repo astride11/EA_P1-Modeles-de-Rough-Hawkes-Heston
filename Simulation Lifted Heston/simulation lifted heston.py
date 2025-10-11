@@ -7,7 +7,7 @@ os.chdir(r"C:\Users\achle\EA_P1-Modeles-de-Rough-Hawkes-Heston\Simulation Lifted
 
 # Liste des fichiers de simulation
 files = [
-    'simulation_N10.csv',
+    'simulation_N1.csv',
     'simulation_N20.csv',
     'simulation_N50.csv',
     'simulation_N100.csv',
@@ -16,7 +16,7 @@ files = [
 ]
 
 # Valeurs de N correspondantes
-N_values = [10, 20, 50, 100, 200, 500]
+N_values = [1, 20, 50, 100, 200, 500]
 
 # Paramètres du modèle (à ajuster selon vos paramètres réels)
 params = {
