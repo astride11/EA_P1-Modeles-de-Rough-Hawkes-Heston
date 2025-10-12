@@ -5,7 +5,7 @@
 #include <functional>
 #include <random>
 #include <limits>
-#include "Option.hpp"
+#include "../Option.hpp"
 #include "Heston.hpp"
 
 struct HestonParams {
@@ -21,8 +21,8 @@ struct CalibConfig {
     bool   vega_weights    = true;
     double feller_penalty  = 100.0; // lambda pour pénaliser max(0, sigma^2 - 2 kappa theta)
     double price_eps       = 1e-10; // plancher prix pour erreurs relatives
-    double vol_bp_target   = 1e-4;  // tolérence cible ~ 1bp
-    int    max_iters_local = 500;
+    double vol_bp_target   = 1e-6;  // tolérence cible ~ 1bp
+    int    max_iters_local = 1000;
     int    multistart      = 8;     // nb redémarrages
     unsigned seed          = 42;
 };
@@ -43,7 +43,7 @@ class HestonCalibrator {
 public:
     HestonCalibrator(const std::vector<Option*>& market, CalibConfig cfg = {});
     // lance la calibration et renvoie les paramètres + erreur RMS
-    std::pair<HestonParams,double> calibrate();
+    std::pair<HestonParams,double> calibrate(double v0, double theta, double rho, double sigma, double kappa);
     
     // utilitaire: prix/vol modèle pour une option avec params p
     double model_price_for(const Option& opt, const HestonParams& p) const;
@@ -61,6 +61,6 @@ private:
 
 
 
-    // simple Nelder-Mead (ou branche vers ton LBFGS si tu en as un)
+    // simple Nelder-Mead 
     std::array<double,5> nelder_mead(const std::array<double,5>& x0, double scale, int max_iter) const;
 };

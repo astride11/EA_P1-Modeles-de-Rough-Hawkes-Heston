@@ -1,7 +1,7 @@
 #ifndef HESTON_HPP
 #define HESTON_HPP
 
-#include "Option.hpp"
+#include "../Option.hpp"
 #include <complex>
 
 using cdouble = std::complex<double>;
