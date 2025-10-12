@@ -4,7 +4,11 @@
 #include <iostream>
 #include <cmath>
 #include <numeric>
+#include <complex>
 #include <algorithm>
+
+using namespace std;
+using cd = complex<double>;
 
 class LiftedHeston : public Option {
 private:
@@ -33,9 +37,9 @@ public:
     double prix() const override {
         return 0.0; // On attend Felix
     }
-    void simulate_paths(int N_steps, double T_hori, std::vector<double>& S_paths, std::vector<double>& V_paths, 
-                        int N_paths, double kappa_, double theta_, double sigma_, double rho_, double v0_, 
-                        double S0_, double H_, int N_, double rn_, double r_);
+    double prix_mc(int N_steps, int N_paths, double T_hori);
+    
+    void simulate_paths(int N_steps, double T_hori, std::vector<double>& S_paths, std::vector<double>& V_paths);
     
     void simulate_compare_N(
         const std::vector<int> &N_levels,
@@ -64,4 +68,20 @@ public:
     double getV0() const;
     double getH() const;
     int    getN() const;
+
+    // =========== Méthodes pour le pricing par Cosinus ===========
+
+    double Ksi(double c, double d, int k, double a, double b) const;
+
+    double Chi(double c, double d, int k, double a, double b) const;
+
+    double Vk(int k, double a, double b) const;
+
+    vector<vector<cd>> riccati_solver_all(const Param_sup& params, cd u, double T, int N_steps) const;
+
+    cd char_func(double u, double T, int N_steps = 2) const;
+
+    double prix_cos(int N_cos, double L) const;
+
+
 };

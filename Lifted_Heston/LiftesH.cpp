@@ -11,6 +11,11 @@
 
 using namespace std;
 
+static inline cd F_fun(cd u, cd v, double kappa, double sigma, double rho) {
+    return 0.5 * (u * u - u)
+         + (rho * sigma * u - kappa) * v
+         + 0.5 * sigma * sigma * v * v;
+}
 // ===== Constructeur par défaut =====
 LiftedHeston::LiftedHeston()
     /*
@@ -39,27 +44,66 @@ LiftedHeston::Param_sup LiftedHeston::fix_params(int N, double H, double alpha, 
     Param_sup params;
     params.c.resize(N);
     params.x.resize(N);
+    
+    double gamma_alpha = tgamma(alpha);
+    double gamma_2_minus_alpha = tgamma(2.0 - alpha);
+    
     for (int i = 0; i < N; ++i) {
-        params.c[i] = ((pow(rn, 1 - alpha) - 1) * pow(rn, (alpha - 1) * (1 + N/2.0)))* pow(rn, (1 - alpha) * (i+1)) / 
-               (tgamma(alpha) * tgamma(2 - alpha)) ;
-
-        params.x[i] = (((1 - alpha) * (pow(rn, 2 - alpha) - 1))* pow(rn, i - N/2.0) / ((2 - alpha) * (pow(rn, 1 - alpha) - 1))); 
+        // Correction du calcul de c[i]
+        double term1 = pow(rn, 1.0 - alpha) - 1.0;
+        double term2 = pow(rn, (alpha - 1.0) * (1.0 + N/2.0));
+        double term3 = pow(rn, (1.0 - alpha) * (i + 1));
+        
+        params.c[i] = (term1 * term2 * term3) / (gamma_alpha * gamma_2_minus_alpha);
+        
+        // Correction du calcul de x[i]
+        double num = (1.0 - alpha) * (pow(rn, 2.0 - alpha) - 1.0);
+        double denom = (2.0 - alpha) * (pow(rn, 1.0 - alpha) - 1.0);
+        params.x[i] = (num / denom) * pow(rn, i - N/2.0);
+        
+        // Protection contre les valeurs aberrantes
+        if (std::isnan(params.c[i]) || std::isinf(params.c[i])) {
+            params.c[i] = 0.0;
+        }
+        if (std::isnan(params.x[i]) || std::isinf(params.x[i])) {
+            params.x[i] = 1.0; // valeur par défaut
+        }
     }
     return params;
 }
 
 double LiftedHeston::g0(double t, Param_sup params) const {
     double sum = 0.0;
+    const double eps = 1e-12;
+    
     for (int i = 0; i < N; ++i) {
-        sum += params.c[i] * (1 - exp(-params.x[i] * t)) / params.x[i];
+        double x_i = params.x[i];
+        if (std::abs(x_i) < eps) {
+            // Développement de Taylor pour x petit
+            sum += params.c[i] * (t - 0.5 * x_i * t * t);
+        } else {
+            sum += params.c[i] * (1.0 - exp(-x_i * t)) / x_i;
+        }
     }
-    return v0 + kappa * theta * sum;
+    
+    double result = v0 + kappa * theta * sum;
+    return std::max(result, 1e-8); // Éviter les valeurs négatives
 }
+void LiftedHeston::simulate_paths(int N_steps, double T_hori, std::vector<double>& S_paths, std::vector<double>& V_paths){
 
-void LiftedHeston::simulate_paths(int N_steps, double T_hori, std::vector<double>& S_paths, std::vector<double>& V_paths,
-                                  int N_paths, double kappa_, double theta_, double sigma_, double rho_,
-                                  double v0_, double S0_, double H_, int N_, double rn_, double r_){
 
+    double S0_ = this->S0;
+    double v0_ = this->v0;
+    double kappa_ = this->kappa;
+    double theta_ = this->theta;
+    double sigma_ = this->sigma;
+    double rho_ = this->rho;
+    double H_ = this->H;
+    int N_ = this->N;
+    double rn_ = this->rn;
+    double r = this->r;
+    double q = this->q;
+    
     double dt = T_hori / N_steps;
     S_paths[0] = S0_;
     V_paths[0] = v0_;
@@ -67,7 +111,8 @@ void LiftedHeston::simulate_paths(int N_steps, double T_hori, std::vector<double
     Param_sup params = fix_params(N_, H_, H_ + 0.5, rn_);
     std::vector<std::vector<double>> U(N_, std::vector<double>(N_steps + 1, 0.0));
 
-    std::mt19937 gen(42);
+    std::random_device rd;
+    std::mt19937 gen(rd());
     std::normal_distribution<> dist(0.0, 1.0);
 
     for (int i = 1; i <= N_steps; ++i) {
@@ -232,20 +277,199 @@ void LiftedHeston::simulate_compare_N(
     std::cout << "Ecrit fichiers : S_compare_N.csv et V_compare_N.csv\n";
 }
 
+double LiftedHeston::prix_mc(int N_steps, int N_paths, double T_hori) {
+
+    double K = this->K;
+    double phi = this->phi;
+    double r = this->r;
+    double q = this->q;
+    
+    std::vector<double> S_paths(N_steps + 1);
+    std::vector<double> V_paths(N_steps + 1);
+    double payoff_sum = 0.0;
+
+    for (int i = 0; i < N_paths; ++i) {
+        simulate_paths(N_steps, T_hori, S_paths, V_paths);
+        double payoff = std::max(phi * (S_paths.back() - K), 0.0);
+        payoff_sum += payoff;
+    }
+
+    double discount_factor = std::exp(-r * T_hori);
+    return (payoff_sum / N_paths) * discount_factor;
+}
+
+// ======== Pricing avec Cosinus ========
+
+double LiftedHeston::Ksi(double c, double d, int k, double a, double b) const{
+
+    if (k == 0) {
+        return std::exp(d) - std::exp(c);
+    }
+
+    double delta1 = b - a; 
+    double const1 = (k * M_1_PI) / delta1;
+    double denum = 1 + const1 * const1;
+    cout << "denum: " << denum << endl;
+
+    cout << "le pb c'est exp b"<< std::exp(b) << endl;
+    cout << "je pense y a pas de suci avec exp c"<< std::exp(c) << endl;
+    double num = std::cos(const1 * (d - a)) * std::exp(d) - std::cos(const1 * (c - a)) * std::exp(c);
+    num += const1 * (std::sin(const1 * (d - a)) * std::exp(d) - std::sin(const1 * (c - a)) * std::exp(c));
+
+    return  num / denum;
+}
+
+double LiftedHeston::Chi(double c, double d, int k, double a, double b) const{
+
+    if (k == 0) {
+        return d-c;
+    }
+
+    double delta1 = b - a; 
+    double const1 = (k * M_1_PI) / delta1;
+    //cout << "const1: " << const1 << endl;
+    double num = std::sin(const1 * (d - a)) - std::sin(const1 * (c - a));
+
+    return num / const1;
+}
+
+double LiftedHeston::Vk(int k, double a, double b) const{
+
+    double K = this->K;
+    //cout <<"strike: " << K << endl;
+
+    //cout << "Calcul de Vk pour k=" << k << ", a=" << a << ", b=" << b << endl;
+    double term1 = Ksi(0, b, k, a, b);
+    //cout << "Term1 pour k=" << k << ": " << term1 << endl;
+    double term2 = Chi(0, b, k, a, b);
+    //cout << "Term2 pour k=" << k << ": " << term2 << endl;
+
+    return (2.0 / (b - a)) * K * (term1 - term2);
+}
+
+double LiftedHeston::prix_cos(int N_cos, double L) const{
+    
+    double K = this->K;
+    double S0 = this->S0;
+    double r = this->r;
+    double q = this->q;
+    double T = this->T;
+
+    // Étape 1: Calculer la variance moyenne pour approximer les cumulants
+    double avg_variance = g0(T, fix_params(this->N, this->H, this->alpha, this->rn)) / T;
+    
+    // Étape 2: Cumulants approximatifs pour Lifted
+    double c1 = (r - q - 0.5 * avg_variance) * T; // Moyenne du log-price
+    double c2 = avg_variance * T; // Variance
+    double c4 = 3.0 * c2 * c2; // Kurtosis (approximation Gaussienne)
+    
+
+    double a = c1 - L * std::sqrt(std::abs(c2) + std::sqrt(std::abs(c4)));
+    double b = c1 + L * std::sqrt(std::abs(c2) + std::sqrt(std::abs(c4)));
+
+    // Calcul des coefficients Vk
+    std::vector<double> Vk_vec(N_cos);
+    for (int k = 0; k < N_cos; ++k) {
+        Vk_vec[k] = Vk(k, a, b);
+        cout << "Calcul de Vk pour k=" << k << ", Vk=" << Vk_vec[k] << endl;
+    }
+
+    // Calcul des coefficients Re(φ(k))
+    std::vector<double> Re_phi_vec(N_cos);
+    for (int k = 0; k < N_cos; ++k) {
+        double u = (k * M_2_PI) / (b - a); 
+
+        std::complex<double> phi_u = char_func(u, T);
+        std::complex<double> exp_term = std::exp(std::complex<double>(0, -u  * a));
+        std::complex<double> temp = phi_u * exp_term;
+        Re_phi_vec[k] = temp.real();
+        if (k == 0) Re_phi_vec[k] *= 0.5; // Premier terme divisé par 2
+    }
+
+    // Calcul du prix
+    double price = 0.0;
+    for (int k = 0; k < N_cos; ++k) {
+        price += Re_phi_vec[k] * Vk_vec[k];
+    }
+    price *= std::exp(-r * T);
+    return price;
+}
+
+vector<vector<cd>> LiftedHeston::riccati_solver_all( const LiftedHeston::Param_sup& params, cd u, double T, int N_steps) const {
+    
+    //params 
+    double rho = this->rho; double kappa = this->kappa; double sigma = this->sigma;
+
+    double dt = T / N_steps;
+
+    vector<vector<cd>> PSI(N_steps + 1, vector<cd>(this->N + 1, 0.0));
+
+    vector<cd> v_sum_grid(N_steps + 1, 0.0);
+
+    for (int i = 1; i < this->N + 1; ++i) {
+        PSI[0][i] = 0.0; // condition initiale
+    }
+
+    for (int n = 0; n < N_steps; ++n) {
+        cd v_sum = 0.0;
+        for (int j = 1; j < this->N + 1; ++j) {
+            v_sum += params.c[j-1] * PSI[n][j];
+        }
+        v_sum_grid[n + 1] = v_sum;
+
+        for (int i = 1; i < this->N + 1; ++i) {
+            cd F_val = F_fun(u, v_sum, kappa, sigma, rho);
+
+            PSI[n + 1][i] = PSI[n][i] + dt * F_val;
+
+            PSI[n + 1][i] /= (1.0 + dt * params.x[i - 1]); 
+        }
+    }
+    return PSI;
+}
+
+cd LiftedHeston::char_func(double u, double T, int N_steps) const{
+    
+    //params 
+    double v0 = this->v0; double r = this->r; double q = this->q; double S0 = this->S0;
+
+    //fix params
+    LiftedHeston::Param_sup params = fix_params(this->N, this->H, this->alpha, this->rn);
+    
+    //solve riccati
+    vector<vector<cd>> PSI = riccati_solver_all(params, u, T, N_steps);
+    //compute phi
+    double dt = T / N_steps;
+    cd intergral = 0.0;
+
+    cd v_sum_T = 0.0;
+    for (int k = 0; k<N_steps; ++k){
+        for (int j = 1; j < this->N + 1; ++j) {
+            v_sum_T += params.c[j-1] * PSI[k][j];
+        }
+        intergral += F_fun(u, v_sum_T, this->kappa, this->sigma, this->rho) * dt;
+        intergral *= g0(T - k * dt, params);
+
+        v_sum_T = 0.0;
+    }
+
+    cd phi = std::exp(cd(0, u * std::log(S0)) + intergral);
+
+    return phi;
+}
+
 int main() {
-    // paramètres
-    double kappa = 1.5, theta = 0.04, sigma = 0.3, rho = -0.7;
-    double v0 = 0.04, S0 = 100.0, r = 0.0, q = 0.0;
-    double H = 0.1; // utilisé par fix_params via this->H
-    int N_steps = 500;
 
-    std::vector<int> N_levels = {2, 20, 100, 500, 1000};
-    std::vector<double> rn_levels;
-    for (int N : N_levels) rn_levels.push_back(1 + 10 * std::pow(N, -0.9));
+    LiftedHeston model(1, 100.0, 100.0, 1.0, 0.0, 0.0, 0.0, 10.0,
+                       1.5, 0.04, 0.3, -0.7, 0.04, 0.1, 2, 
+                       0.0, 2.5);
 
-    LiftedHeston model; 
-    model.simulate_compare_N(N_levels, rn_levels, N_steps, 1.0,
-                             kappa, theta, sigma, rho,
-                             v0, S0, r, q, 42);
+    int N_steps = 500;  
+    int N_paths = 10000;
+    double T_hori = 1.0;
+    //double prix_mc = model.prix_mc(N_steps, N_paths, T_hori);
+    double prix_cos = model.prix_cos(200, 10.0);
+    //std::cout << "Prix MC: " << prix_mc << std::endl;
+    std::cout << "Prix COS: " << prix_cos << std::endl;
     return 0;
 }
