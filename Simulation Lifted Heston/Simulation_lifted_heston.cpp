@@ -30,6 +30,7 @@ public:
     double A;
     double B;
     double b;
+    double K=10.0; // Strike de l'option VIX
    
     Simulation_lifted_heston(double kappa_, double theta_, double sigma_, double rho_, double V0_, double H_, int N_, double S0_, double r_, double T_)
         : kappa(kappa_), theta(theta_), sigma(sigma_), rho(rho_), V0(V0_), H(H_), N(N_), S0(S0_), r(r_), T(T_), alpha(H_ + 0.5) {
@@ -119,7 +120,7 @@ void Simulate(std::vector<double>& S, std::vector<double>& V, std::vector<double
         std::vector<std::vector<double>> U(N, std::vector<double>(N_steps+1, 0.0));
         S[0] = S0;
         V[0] = V0;
-        VIX[0]=std::sqrt(theta + (V[0] - theta) * (1 - std::exp(-kappa * delta)) / (kappa * delta));
+        VIX[0]=100*std::sqrt(theta + (V[0] - theta) * (1 - std::exp(-kappa * delta)) / (kappa * delta));
 
         for (int j = 1; j <= N_steps; ++j) {
             Result res = g0(j*dt);
@@ -141,7 +142,7 @@ void Simulate(std::vector<double>& S, std::vector<double>& V, std::vector<double
                 sumU += res.c[i] * U[i][j];
             };
             V[j] = std::max(res.g0 + sumU, eps);
-            VIX[j]= std::sqrt(theta + (V[j] - theta) * (1 - std::exp(-kappa * delta)) / (kappa * delta));
+            VIX[j]=100* std::sqrt(theta + (V[j] - theta) * (1 - std::exp(-kappa * delta)) / (kappa * delta));
 
         }
     }
@@ -151,7 +152,7 @@ double call_price() {
     paths << "path,step,t,VIX\n";
     double sum_payoff = 0.0; 
     double dt = T / N_steps;
-    double K=0.1;
+    
     std::cout << "Valeur du Strike " <<K<<std::endl;
     for (int m = 0; m < M; ++m) {
         std::vector<double> S, V, VIX;
@@ -209,19 +210,19 @@ std::complex<double> laplace_CIR(std::complex<double> u) {
     return part1 * part2;
 }
 double call_price_laplace() {
-    double K=0.1;
+    
     double phi_R = 0.1;
     double Imax  = 100.0;
     auto integrand = [&](double phi_I) {
     std::complex<double> phi(phi_R, phi_I);  // φ = φR + iφI
-    std::complex<double> erfc_term = erfc_complex(K * std::sqrt(phi));
-    std::complex<double> expo = std::exp(phi * A )* laplace_CIR(-phi * B);
+    std::complex<double> erfc_term = erfc_complex(K * std::sqrt(phi)/100.0);
+    std::complex<double> expo = std::exp(phi * A)* laplace_CIR(-phi* B);
     return real( (erfc_term * expo / std::pow(phi, 1.5)));
     
 };
 
     double integral = integrate_simpson(integrand, 1e-6, 500, n);
-    double C0 = std::exp(-r * T) * (1.0/(2.0*std::sqrt(M_PI)) * integral);
+    double C0 = 100*std::exp(-r * T) * (1.0/(2.0*std::sqrt(M_PI)) * integral);
     std::cout << std::fixed << "C0 (prix du call VIX via formule analytique) = " << C0 << std::endl;
     return C0;
 }
