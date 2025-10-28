@@ -21,6 +21,8 @@ private:
     int N;          // Nombre de facteurs
     double alpha;   // alpha = H + 0.5
     double rn;      // Facteur d'espacement
+    int M, L, N_intervals;
+    double alpha2;
 
 public:
     // constructeur par défaut
@@ -30,13 +32,12 @@ public:
     LiftedHeston(int phi_, double S0_, double K_, double T_, double t0_,
                  double r_, double q_, double market_price_,
                  double kappa_, double theta_, double sigma_, double rho_, double v0_, double H_, int N_,
-                 double vega_ , double rn_) ;
+                 double vega_ , double rn_);
 
     virtual ~LiftedHeston();  
-
-    double prix() const override {
-        return 0.0; // On attend Felix
-    }
+ 
+    double prix() const override; 
+    
     double prix_mc(int N_steps, int N_paths, double T_hori);
     
     void simulate_paths(int N_steps, double T_hori, std::vector<double>& S_paths, std::vector<double>& V_paths);
@@ -55,11 +56,13 @@ public:
         std::vector<double> c;
         std::vector<double> x;
     };
-   
+
+    
     Param_sup fix_params(int N, double H, double alpha, double rn) const;
 
-    double g0(double t, Param_sup params) const;  
-    
+    double g0(double t, Param_sup params) const;
+
+    cd F_fun(cd u, cd v) const;
     // accesseurs
     double getKappa() const;
     double getTheta() const;
@@ -71,17 +74,7 @@ public:
 
     // =========== Méthodes pour le pricing par Cosinus ===========
 
-    double Ksi(double c, double d, int k, double a, double b) const;
+    cd charfunc(double u, int M) const;
 
-    double Chi(double c, double d, int k, double a, double b) const;
-
-    double Vk(int k, double a, double b) const;
-
-    vector<vector<cd>> riccati_solver_all(const Param_sup& params, cd u, double T, int N_steps) const;
-
-    cd char_func(double u, double T, int N_steps = 2) const;
-
-    double prix_cos(int N_cos, double L) const;
-
-
+    double prix_carr_madan(double alpha_cm, double M, double L) const;
 };

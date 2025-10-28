@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import math
 
 def plot_smiles(datafile, outname):
-    # Lecture du CSV exporté depuis ton code C++
+    # Lecture du CSV exporté depuis C++
     df = pd.read_csv(datafile)
 
     # Maturités uniques triées
