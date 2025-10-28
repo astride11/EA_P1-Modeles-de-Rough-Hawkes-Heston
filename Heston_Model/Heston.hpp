@@ -1,7 +1,7 @@
 #ifndef HESTON_HPP
 #define HESTON_HPP
 
-#include "Option.hpp"
+#include "../Option.hpp"
 #include <complex>
 
 using cdouble = std::complex<double>;
@@ -33,7 +33,7 @@ public:
     
     cdouble heston_characteristic(double phi, int j, double tau) const;
     // accesseurs
-    double getKappa() const;
+    double getKappa() const  ;
     double getTheta() const;
     double getSigma() const;
     double getRho() const;

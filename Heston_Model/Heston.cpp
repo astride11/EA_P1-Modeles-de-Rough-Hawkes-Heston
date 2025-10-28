@@ -3,6 +3,8 @@
 #include <vector>
 #include <cmath>
 #include <algorithm> 
+#include <numeric>
+#include <stdexcept>
 
 using cdouble = std::complex<double>;
 
@@ -50,7 +52,7 @@ double Heston::prix_call() const {
     }
     double p1 = heston_probability(1, tau);
     double p2 = heston_probability(2, tau);
-    double call_price = S0 * p1 - K * exp(-r * tau) * p2; 
+    double call_price = S0 * exp(-q * (T - t0)) * p1 - K * exp(-r * tau) * p2; 
 
     return call_price;
 }
@@ -122,7 +124,7 @@ double Heston::prix() const {
         return prix_call();
     } else {
         double call_price = prix_call();
-        double put_price = call_price - S0 + K * exp(-r * (T - t0)); // ✅ Parité call-put standard
+        double put_price = call_price - S0 * exp(-q * (T - t0)) + K * exp(-r * (T - t0)); // ✅ Parité call-put standard
         return put_price;
     }
 }
