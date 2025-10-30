@@ -36,7 +36,7 @@ def plot_smiles(datafile, outname):
     axes[0].legend(loc="best", fontsize=9)
  
     
-    plt.suptitle("Comparaison des smiles de volatilité implicite (Heston)", fontsize=14, weight="bold")
+    plt.suptitle("Comparaison des smiles de volatilité implicite sur données simulées (Heston)", fontsize=14, weight="bold")
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(f"Heston_Model/test_Heston/{outname}", dpi=150)
 

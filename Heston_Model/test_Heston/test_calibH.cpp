@@ -65,8 +65,7 @@ static void print_params(const char* title, double kappa, double theta, double s
               << "v0="    << v0    << "\n";
 }
 
-int func(){ 
-    
+int main(){
     // renomer en main() pour exécuter ce test
     // Test de calibration sur une surface synthétique
 
@@ -80,7 +79,7 @@ int func(){
 
     // Grille de maturités et moneyness
     std::vector<double> maturities {0.50, 1.00, 1.5, 2.0};
-    std::vector<double> moneyness  { -0.4, -0.30, -0.15, -0.1, 0.0, 0.15, 0.30, 0.4}; // m = log(K/F)
+    std::vector<double> moneyness  { -0.4, -0.30, -0.15, -0.01, -0.02, -0.03, -0.05, -0.07, -0.1, 0.0, 0.01, 0.02, 0.03, 0.05, 0.07, 0.15, 0.30, 0.4}; // m = log(K/F)
 
     // Construis les options synthétiques
     std::vector<std::unique_ptr<Option>> storage;
@@ -173,7 +172,7 @@ int func(){
 
 
 
-int main() {
+int func() {
     // ---------- 1) Lecture des données réelles ----------
     std::vector<std::unique_ptr<Option>> storage;
     std::vector<Option*> market;
