@@ -18,7 +18,7 @@ Future updates will include:
 ##  Abstract  
 This repository focuses on the implementation and numerical simulation of the **Rough Hawkes Heston model**, a stochastic volatility framework that combines *rough volatility* and *self-exciting jumps* to capture the joint dynamics of equity indices (e.g., S&P 500) and their volatility indices (e.g., VIX).  
 
-The rise of rough volatility models—since the seminal work of **Jim Gatheral, Thibault Jaisson, and Mathieu Rosenbaum (2018)** in [*“Volatility is Rough”*](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3014764)—has demonstrated that volatility behaves like a **fractional process** with Hurst parameter \( H < 0.5 \). This provides a more realistic description of volatility clustering and long-memory effects observed in financial markets.  
+The rise of rough volatility models—since the seminal work of **Jim Gatheral, Thibault Jaisson, and Mathieu Rosenbaum (2018)** in [*“Volatility is Rough”*](https://arxiv.org/abs/1410.3394)—has demonstrated that volatility behaves like a **fractional process** with Hurst parameter \( H < 0.5 \). This provides a more realistic description of volatility clustering and long-memory effects observed in financial markets.  
 
 Building on this paradigm, the **Rough Hawkes Heston model** introduced by **Bondi, Pulido, and Scotti (2022)** in [*“The Rough Hawkes Heston Stochastic Volatility Model”*](https://arxiv.org/abs/2210.12393) extends the classical Heston framework by incorporating both *rough behaviour* and a *Hawkes-type jump intensity*, generating endogenous and clustered jumps in volatility and returns.  
 
