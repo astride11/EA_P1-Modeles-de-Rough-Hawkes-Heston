@@ -66,6 +66,9 @@ axes[1,1].set_xlabel('Strike')
 axes[1,1].legend()
 axes[1,1].grid(True, alpha=0.3)
 
+# Suppression du subplot vide
+fig.delaxes(axes[1,2])
+
 plt.tight_layout()
 script_dir = os.path.dirname(os.path.abspath(__file__))
 plt.savefig(os.path.join(script_dir, 'heston_parameters_impact.png'), dpi=300, bbox_inches='tight')
